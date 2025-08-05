@@ -2,6 +2,7 @@ from server import PromptServer
 import execution
 import logging
 import time
+import uuid
 
 from aiohttp import web
 
@@ -25,9 +26,10 @@ async def prompt_check(request):
 
     if "prompt" in json_data:
         prompt = json_data["prompt"]
-        valid = execution.validate_prompt(prompt)
+        prompt_id = str(json_data.get("prompt_id", uuid.uuid4()))
+        valid = await execution.validate_prompt(prompt_id, prompt)
         if valid[0]:
-            response = {"prompt_id": "", "number": number, "node_errors": valid[3]}
+            response = {"prompt_id": prompt_id, "number": number, "node_errors": valid[3]}
             elapsed_time = time.time() - start_time
             logging.info(f"[pimg] prompt_check request completed in {elapsed_time:.3f} seconds")
             return web.json_response(response)
@@ -38,4 +40,10 @@ async def prompt_check(request):
     else:
         elapsed_time = time.time() - start_time
         logging.warning(f"[pimg] no prompt, request took {elapsed_time:.3f} seconds")
-        return web.json_response({"error": "no prompt", "node_errors": []}, status=400)
+        error = {
+            "type": "no_prompt",
+            "message": "No prompt provided",
+            "details": "No prompt provided",
+            "extra_info": {}
+        }
+        return web.json_response({"error": error, "node_errors": {}}, status=400)
