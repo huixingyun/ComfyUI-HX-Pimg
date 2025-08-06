@@ -52,7 +52,12 @@ async def prompt_check(request):
     if "prompt" in json_data:
         prompt = json_data["prompt"]
         prompt_id = str(json_data.get("prompt_id", uuid.uuid4()))
-        valid = await execution.validate_prompt(prompt_id, prompt)
+
+        partial_execution_targets = None
+        if "partial_execution_targets" in json_data:
+            partial_execution_targets = json_data["partial_execution_targets"]
+
+        valid = await execution.validate_prompt(prompt_id, prompt, partial_execution_targets)
         if valid[0]:
             response = {
                 "prompt_id": prompt_id,
